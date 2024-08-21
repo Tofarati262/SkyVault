@@ -3,12 +3,15 @@ import React, { useEffect, useRef, useState } from 'react';
 
 function App() {
   const fileInputRef = useRef(null);
-  const formRef = useRef(null); // Create a ref for the form
   const [file, setFile] = useState(null);
+  const [message, setMessage] = useState(null);
+  const megabyte = 1024 * 1024;
 
   useEffect(() => {
     document.title = "React Uploader"; // Set the title here
   }, []);
+
+ 
 
   const handleClick = () => {
     if (fileInputRef.current) {
@@ -17,15 +20,26 @@ function App() {
   };
 
   const handleFileChange = (event) => {
-    const selectedFile = event.target.files[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      formRef.current.submit(); // Submit the form programmatically
+    let selectedFile = event.target.files[0];
+    const maxSize = 50 * megabyte;
+    
+    if (selectedFile.size > maxSize) {
+      setMessage("File is too large");
+      setFile(null); // Reset file if it is too large
+    } else {
+      setMessage("File selected");
+      setFile(selectedFile); // Store the selected file
     }
   };
 
+  useEffect(()=>{
+    console.log(file);
+  },[file])
+
   const handlesongupload = async (event) => {
     event.preventDefault(); // Prevent default form submission behavior
+    
+    
     if (!file) {
       alert("Please select a file first.");
       return;
@@ -35,25 +49,24 @@ function App() {
     formData.append('file', file);
 
     try {
-      // Replace with your upload logic (e.g., sending formData to your server)
       const response = await fetch('YOUR_UPLOAD_ENDPOINT', {
         method: 'POST',
         body: formData,
       });
 
       if (response.ok) {
-        alert("File uploaded successfully!");
+        setMessage("File uploaded successfully!");
       } else {
-        alert("File upload failed.");
+        setMessage("File upload failed.");
       }
     } catch (error) {
       console.error("Error uploading file:", error);
-      alert("An error occurred while uploading the file.");
+      setMessage("An error occurred while uploading the file.");
     }
   };
 
   return (
-    <form ref={formRef} onSubmit={handlesongupload}>
+    <form onSubmit={handlesongupload}>
       <div className="App" onClick={handleClick}>
         <input
           type="file"
@@ -62,10 +75,13 @@ function App() {
           onChange={handleFileChange}
           style={{ display: 'none' }} // Hide the input element
         />
-        <div className="upload-placeholder" >
-          Click to select a file
+        <div className="upload-placeholder">
+          {message}
         </div>
       </div>
+      {file && (
+        <button type="submit">Upload File</button>
+      )}
     </form>
   );
 }
