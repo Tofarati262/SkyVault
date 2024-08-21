@@ -9,7 +9,7 @@ const port = 5000;
 app.use(express.json());
 
 app.get("/",(req,res)=>{
-    console.log("is not running");
+    console.log("is not running yup");
 })
 
 
