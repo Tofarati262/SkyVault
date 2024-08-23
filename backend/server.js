@@ -58,7 +58,7 @@ function put(url, data) {
   export const main = async (keydata) => {
     const REGION = process.env.REGION;
     const BUCKET = process.env.BUCKET_NAME;
-    let  KEY = "example_file.txt";
+    let  KEY = keydata.file;
   
     // There are two ways to generate a presigned URL.
     // 1. Use createPresignedUrl without the S3 client.
@@ -80,7 +80,7 @@ function put(url, data) {
   
       console.log("Calling PUT using presigned URL with client");
       try{
-      await put(clientUrl, "Hello World");
+      await put(clientUrl, KEY);
       console.log("\nDone. Check your S3 console.");
       }catch(error){
         console.log(`Put request failed: ${error}`);
@@ -99,7 +99,12 @@ app.use(express.json());
 app.get("/uploads",async(req,res)=>{
     try{
         const keydata = req.body
-        main(keydata)
+        console.log(req.body);
+       const sent = await main(keydata)
+       if(sent){
+        res.send(`File ${keydata.fileName} has been Uploaded`);
+       }
+       
     }catch(error){
 
     }
