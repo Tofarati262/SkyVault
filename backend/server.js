@@ -55,7 +55,7 @@ function put(url, data) {
 
   // step 3 function calls to create a presigned url with client
 
-  export const main = async () => {
+  export const main = async (keydata) => {
     const REGION = process.env.REGION;
     const BUCKET = process.env.BUCKET_NAME;
     let  KEY = "example_file.txt";
@@ -96,7 +96,13 @@ const port = 5000;
 
 app.use(express.json());
 
-app.get("/",(req,res)=>{
+app.get("/uploads",async(req,res)=>{
+    try{
+        const keydata = req.body
+        main(keydata)
+    }catch(error){
+
+    }
     console.log("is not running yup");
 })
 
