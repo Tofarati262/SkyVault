@@ -11,8 +11,6 @@ function App() {
     document.title = "React Uploader"; // Set the title here
   }, []);
 
- 
-
   const handleClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click(); // Trigger file input click
@@ -20,26 +18,25 @@ function App() {
   };
 
   const handleFileChange = (event) => {
-    let selectedFile = event.target.files[0];
+    const selectedFile = event.target.files[0];
     const maxSize = 50 * megabyte;
-    
+
     if (selectedFile.size > maxSize) {
       setMessage("File is too large");
       setFile(null); // Reset file if it is too large
     } else {
-      setMessage("File selected");
+      setMessage(`File selected: ${selectedFile.name}`);
       setFile(selectedFile); // Store the selected file
     }
   };
 
-  useEffect(()=>{
+  useEffect(() => {
     console.log(file);
-  },[file])
+  }, [file]);
 
   const handlesongupload = async (event) => {
     event.preventDefault(); // Prevent default form submission behavior
-    
-    
+
     if (!file) {
       alert("Please select a file first.");
       return;
@@ -47,18 +44,20 @@ function App() {
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('fileName',file.name);
+    formData.append('fileName', file.name);
 
     try {
-      const response = await fetch("http://localhost:5000/uploads" , {
+      const response = await fetch("http://localhost:5000/uploads", {
         method: 'POST',
         body: formData,
       });
 
       if (response.ok) {
         setMessage("File uploaded successfully!");
+        console.log("Response:", await response.json());
       } else {
         setMessage("File upload failed.");
+        console.error("Upload failed:", response);
       }
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -77,7 +76,7 @@ function App() {
           style={{ display: 'none' }} // Hide the input element
         />
         <div className="upload-placeholder">
-          {message}
+          {message || "Click to select a file"}
         </div>
       </div>
       {file && (
