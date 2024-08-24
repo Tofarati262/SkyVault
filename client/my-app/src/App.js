@@ -69,6 +69,9 @@ function App() {
   // create a map function that create a div with the name of the song that was uploaded
   // limit the amount of request a user can send in a day (24hrs : 3 upload request)
   // figure out amazon IAM stuff to enhance security 
+  // figure out why second bucket isnt logging 
+  // work out bucket object ownesrship and retrieval 
+  // use CDN for retrieval
   return (
     <form onSubmit={handlesongupload}>
       <div className="App" onClick={handleClick}>
