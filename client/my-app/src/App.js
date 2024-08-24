@@ -64,7 +64,11 @@ function App() {
       setMessage("An error occurred while uploading the file.");
     }
   };
+  
 
+  // create a map function that create a div with the name of the song that was uploaded
+  // limit the amount of request a user can send in a day (24hrs : 3 upload request)
+  // figure out amazon IAM stuff to enhance security 
   return (
     <form onSubmit={handlesongupload}>
       <div className="App" onClick={handleClick}>
@@ -81,7 +85,7 @@ function App() {
       </div>
       {file && (
         <button type="submit">Upload File</button>
-      )}
+      )}                                                 
     </form>
   );
 }
