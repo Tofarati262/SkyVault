@@ -1,31 +1,45 @@
 require("dotenv").config();
 const express = require("express");
-const app = express();
-const https = require("https");
+const multer = require("multer");
 const { PutObjectCommand, S3Client } = require("@aws-sdk/client-s3");
-const { fromIni } = require("@aws-sdk/credential-providers");
-const { HttpRequest } = require("@smithy/protocol-http");
-const {
-  getSignedUrl,
-  S3RequestPresigner,
-} = require("@aws-sdk/s3-request-presigner");
-const { parseUrl } = require("@smithy/url-parser");
-const { formatUrl } = require("@aws-sdk/util-format-url");
-const { Hash } = require("@smithy/hash-node");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const { parseUrl } = require  ("@smithy/url-parser");
+const { formatUrl } = require ( "@aws-sdk/util-format-url");
+const { Hash } = require  ("@smithy/hash-node");
+const https = require ("https");
+const { HttpRequest } = require ("@smithy/protocol-http");
+const cors = require("cors");
 
-// Step 1: Create a presigned URL
+const app = express();
+const port = 5000;
+
+var corsOptions = {
+  origin: "http://localhost:3000",
+  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"],
+  preflightContinue: false,
+  optionsSuccessStatus: 204,
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+app.use(cors(corsOptions));
+app.use(express.json());
+
+// Set up Multer for file uploads
+const storage = multer.memoryStorage(); // Store files in memory as Buffer
+const upload = multer({ storage: storage });
+
 const createPresignedUrlWithClient = ({ region, bucket, key }) => {
   const client = new S3Client({ region });
   const command = new PutObjectCommand({ Bucket: bucket, Key: key });
   return getSignedUrl(client, command, { expiresIn: 3600 });
 };
 
-// Step 4: Upload files to AWS bucket
-function put(url, data) {
+// Function to upload file to S3 using presigned URL
+const put = (url, data) => {
   return new Promise((resolve, reject) => {
     const req = https.request(
       url,
-      { method: "PUT", headers: { "Content-Length": Buffer.byteLength(data) } },
+      { method: "PUT", headers: { "Content-Length": Buffer.byteLength(data), timeout: 10000 } },
       (res) => {
         let responseBody = "";
         res.on("data", (chunk) => {
@@ -42,13 +56,12 @@ function put(url, data) {
     req.write(data);
     req.end();
   });
-}
+};
 
-// Step 3: Function calls to create a presigned URL with client
-const main = async (keydata) => {
+const main = async (file) => {
   const REGION = process.env.REGION;
   const BUCKET = process.env.BUCKET_NAME;
-  const KEY = keydata.file;
+  const KEY = file.originalname; // Use the original file name as the key
 
   try {
     const clientUrl = await createPresignedUrlWithClient({
@@ -58,34 +71,36 @@ const main = async (keydata) => {
     });
 
     console.log("Calling PUT using presigned URL with client");
-    await put(clientUrl, KEY);
+    await put(clientUrl, file.buffer); // Use the file buffer directly
     console.log("\nDone. Check your S3 console.");
-    return true; // Indicate success
+    return true;
   } catch (err) {
     console.error(err);
-    return false; // Indicate failure
+    return false;
   }
 };
 
-const port = 5000;
-
-app.use(express.json());
-
-app.post("/uploads", async (req, res) => {
+// Route to handle file uploads
+app.post("/uploads", upload.single("file"), async (req, res) => {
   try {
-    const keydata = req.body;
-    console.log(req.body);
-    const sent = await main(keydata);
+    const file = req.file; // Get the uploaded file from multer
+
+    if (!file) {
+      return res.status(400).send("No file uploaded.");
+    }
+
+    console.log("Received file:", file.originalname);
+    const sent = await main(file);
+
     if (sent) {
-      res.send(`File ${keydata.file} has been uploaded`);
+      res.send(`File ${file.originalname} has been uploaded successfully.`);
     } else {
-      res.status(500).send("File upload failed");
+      res.status(500).send("File upload failed.");
     }
   } catch (error) {
-    res.status(500).send("An error occurred");
+    res.status(500).send("An error occurred while uploading the file.");
     console.error("Error in /uploads:", error);
   }
-  console.log("Request processed");
 });
 
 app.listen(port, () => console.log(`App is running on port ${port}`));

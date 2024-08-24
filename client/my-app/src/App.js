@@ -44,17 +44,17 @@ function App() {
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('fileName', file.name);
+    
 
     try {
       const response = await fetch("http://localhost:5000/uploads", {
-        method: 'POST',
+        method: 'post',
         body: formData,
-      });
+      },{Headers: 'Content-Type'});
 
       if (response.ok) {
         setMessage("File uploaded successfully!");
-        console.log("Response:", await response.json());
+        console.log("Response:", await response.text());
       } else {
         setMessage("File upload failed.");
         console.error("Upload failed:", response);
